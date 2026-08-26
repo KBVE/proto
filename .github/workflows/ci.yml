@@ -64,7 +64,11 @@ jobs:
       #     fi
 
   # Proves the schemas actually generate, not merely that they compile. A
-  # module can pass lint and still break a plugin.
+  # module can pass lint and still break a plugin, and it can break one
+  # language while leaving the others fine - a name that is legal in proto but
+  # reserved in C#, for instance. Consumers span four languages, so all four
+  # are generated here rather than discovering the failure in whichever
+  # downstream repository builds first.
   codegen:
     name: codegen
     runs-on: ubuntu-latest
@@ -78,8 +82,30 @@ jobs:
       - name: Generate
         run: buf generate
 
-      - name: Generated output is not empty
+      # An empty directory means the plugin ran and produced nothing, which is
+      # a silent failure: buf exits zero either way.
+      - name: Every language produced output
         run: |
-          count=$(find gen -type f | wc -l)
-          echo "generated $count files"
-          test "$count" -gt 0
+          status=0
+          for lang in ts rust csharp python; do
+            count=$(find "gen/$lang" -type f 2>/dev/null | wc -l | tr -d ' ')
+            printf '%-8s %s files\n' "$lang" "$count"
+            if [ "$count" -eq 0 ]; then
+              echo "::error::no output generated for $lang"
+              status=1
+            fi
+          done
+          exit $status
+
+      # The descriptor set is what non-buf tooling consumes: the zod emitters
+      # in KBVE/kbve read a FileDescriptorSet, not .proto text. Publishing it
+      # as an artifact means that tooling has something to fetch that is built
+      # from a reviewed commit.
+      - name: Build descriptor set
+        run: buf build --output descriptor.binpb --as-file-descriptor-set
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: descriptor-set
+          path: descriptor.binpb
+          retention-days: 30
