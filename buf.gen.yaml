@@ -35,6 +35,14 @@ plugins:
   - remote: buf.build/community/neoeinstein-prost
     out: gen/rust
 
+  # prost emits files that refer to each other with relative module paths
+  # (super::super::r#type::v1::Ulid), so without a module tree the output does
+  # not compile. This plugin writes that tree as mod.rs.
+  - remote: buf.build/community/neoeinstein-prost-crate
+    out: gen/rust
+    opt:
+      - no_features
+
   # C# - Unity.
   - remote: buf.build/protocolbuffers/csharp
     out: gen/csharp
