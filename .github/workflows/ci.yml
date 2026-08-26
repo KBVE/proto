@@ -41,22 +41,27 @@ jobs:
       - name: Format
         run: buf format --diff --exit-code
 
-      # Runs on every event, not just pull requests. Gating this on
-      # `github.event_name == 'pull_request'` meant it never executed on a
-      # push to main, so the guard that matters most was also the one with no
-      # evidence it worked.
+      # DISABLED UNTIL PUBLICATION. Re-enable before the first `buf push`.
       #
-      # origin/main is the base in all cases: on a pull request it is the
-      # merge target, and on a push it is the previous state of the branch.
-      # The first commit on an empty repository has no base, so that one case
-      # is skipped explicitly rather than failing.
-      - name: Breaking
-        run: |
-          if git rev-parse --verify --quiet origin/main >/dev/null; then
-            buf breaking --against '.git#branch=origin/main'
-          else
-            echo "No origin/main yet; nothing to compare against."
-          fi
+      # Nothing consumes these schemas yet, so breaking changes are not only
+      # allowed but the point: retiring kbve/schema.proto deletes messages, and
+      # folding the per-domain rarity and element enums into common changes
+      # field types. This check would fail every one of those pull requests.
+      #
+      # The moment a consumer pins a published version that stops being true,
+      # and this becomes the most important job in the file. Uncommenting it is
+      # the last step before publishing, not an afterthought.
+      #
+      # The command below is verified working: against origin/main it rejects a
+      # deleted field and a changed field type, and accepts an added field.
+      #
+      # - name: Breaking
+      #   run: |
+      #     if git rev-parse --verify --quiet origin/main >/dev/null; then
+      #       buf breaking --against '.git#branch=origin/main'
+      #     else
+      #       echo "No origin/main yet; nothing to compare against."
+      #     fi
 
   # Proves the schemas actually generate, not merely that they compile. A
   # module can pass lint and still break a plugin.

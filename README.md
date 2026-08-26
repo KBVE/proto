@@ -39,6 +39,11 @@ buf breaking --against '.git#branch=main'
 
 ## Status
 
-Migration in progress. Domains are moved from `KBVE/kbve`
+Migration in progress. The breaking-change check in CI is **commented out on
+purpose**: nothing consumes these schemas yet, so reshaping them is the work
+rather than a hazard. It must be re-enabled before the first publish, and the
+publish workflow refuses to run while it is still disabled.
+
+Domains are moved from `KBVE/kbve`
 (`packages/data/proto/`) one at a time. That tree is frozen: it receives
 bugfixes only, and new schema work happens here.
