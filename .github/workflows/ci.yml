@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  buf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+
+      - name: Build
+        run: buf build
+
+      - name: Lint
+        run: buf lint
+
+      - name: Format check
+        run: buf format --diff --exit-code
+
+      # Compares against main so a breaking change to a released schema fails
+      # the PR. Switch --against to the BSR module once the first push lands.
+      - name: Breaking change check
+        if: github.event_name == 'pull_request'
+        run: buf breaking --against '.git#branch=main'

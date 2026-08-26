@@ -1,0 +1,13 @@
+# Schema changes are breaking by default and fan out to every consumer, so
+# every path here requires review.
+*                     @KBVE/proto-maintainers
+
+# The shared layers are imported by every domain. A change here is a change to
+# all of them.
+/kbve/type/           @KBVE/proto-maintainers
+/kbve/common/         @KBVE/proto-maintainers
+
+# Tooling and release configuration.
+/buf.yaml             @KBVE/proto-maintainers
+/buf.gen.yaml         @KBVE/proto-maintainers
+/.github/             @KBVE/proto-maintainers

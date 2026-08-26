@@ -1,0 +1,23 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    # Unity consumers expect KBVE.Proto.<Domain>; setting it here keeps the
+    # option out of every individual file.
+    - file_option: csharp_namespace_prefix
+      value: KBVE.Proto
+plugins:
+  - remote: buf.build/community/stephenh-ts-proto
+    out: gen/ts
+    opt:
+      - esModuleInterop=true
+      - importSuffix=.js
+      - outputServices=false
+      - oneof=unions
+      - enumsAsLiterals=true
+      - stringEnums=true
+      - useOptionals=messages
+      - useExactTypes=true
+      - exportCommonSymbols=true
+      - removeEnumPrefix=true
+      - snakeToCamel=false
