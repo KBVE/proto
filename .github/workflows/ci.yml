@@ -4,16 +4,31 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
+
+# Least privilege. Nothing in this workflow writes to the repository, and on a
+# public repo the default token grant would otherwise be handed to every fork
+# pull request that runs here.
+permissions:
+  contents: read
+
+# A second push to the same branch makes the first run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   buf:
+    name: buf
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          # buf breaking resolves a git ref, so the comparison base has to be
+          # in the local clone.
           fetch-depth: 0
 
-      - uses: bufbuild/buf-action@v1
+      - uses: bufbuild/buf-action@8c6a16e16f12ba20b6470afa9c2ba9b5ba8c97c3 # v1.5.0
         with:
           setup_only: true
 
@@ -23,11 +38,43 @@ jobs:
       - name: Lint
         run: buf lint
 
-      - name: Format check
+      - name: Format
         run: buf format --diff --exit-code
 
-      # Compares against main so a breaking change to a released schema fails
-      # the PR. Switch --against to the BSR module once the first push lands.
-      - name: Breaking change check
-        if: github.event_name == 'pull_request'
-        run: buf breaking --against '.git#branch=main'
+      # Runs on every event, not just pull requests. Gating this on
+      # `github.event_name == 'pull_request'` meant it never executed on a
+      # push to main, so the guard that matters most was also the one with no
+      # evidence it worked.
+      #
+      # origin/main is the base in all cases: on a pull request it is the
+      # merge target, and on a push it is the previous state of the branch.
+      # The first commit on an empty repository has no base, so that one case
+      # is skipped explicitly rather than failing.
+      - name: Breaking
+        run: |
+          if git rev-parse --verify --quiet origin/main >/dev/null; then
+            buf breaking --against '.git#branch=origin/main'
+          else
+            echo "No origin/main yet; nothing to compare against."
+          fi
+
+  # Proves the schemas actually generate, not merely that they compile. A
+  # module can pass lint and still break a plugin.
+  codegen:
+    name: codegen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: bufbuild/buf-action@8c6a16e16f12ba20b6470afa9c2ba9b5ba8c97c3 # v1.5.0
+        with:
+          setup_only: true
+
+      - name: Generate
+        run: buf generate
+
+      - name: Generated output is not empty
+        run: |
+          count=$(find gen -type f | wc -l)
+          echo "generated $count files"
+          test "$count" -gt 0
