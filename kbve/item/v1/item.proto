@@ -4,6 +4,7 @@ package kbve.item.v1;
 
 import "google/protobuf/struct.proto";
 import "kbve/common/v1/element.proto";
+import "kbve/common/v1/equip_slot.proto";
 import "kbve/common/v1/rarity.proto";
 import "kbve/common/v1/registry.proto";
 import "kbve/type/v1/id.proto";
@@ -34,23 +35,6 @@ enum ItemTypeFlag {
   ITEM_TYPE_FLAG_COSMETIC = 0x00080000;
   ITEM_TYPE_FLAG_DEPLOYABLE = 0x00100000;
   ITEM_TYPE_FLAG_SOUL = 0x40000000;
-}
-
-// Where a piece of equipment is worn.
-enum EquipSlot {
-  EQUIP_SLOT_UNSPECIFIED = 0;
-  EQUIP_SLOT_HEAD = 1;
-  EQUIP_SLOT_CHEST = 2;
-  EQUIP_SLOT_LEGS = 3;
-  EQUIP_SLOT_FEET = 4;
-  EQUIP_SLOT_HANDS = 5;
-  EQUIP_SLOT_MAIN_HAND = 6;
-  EQUIP_SLOT_OFF_HAND = 7;
-  EQUIP_SLOT_NECK = 8;
-  EQUIP_SLOT_RING = 9;
-  EQUIP_SLOT_BACK = 10;
-  EQUIP_SLOT_TWO_HAND = 11;
-  EQUIP_SLOT_AMMO = 12;
 }
 
 // What happens when an item is consumed or activated.
@@ -180,7 +164,7 @@ message EnchantmentInfo {
 
 // Present when an item can be equipped.
 message EquipmentInfo {
-  EquipSlot slot = 1;
+  kbve.common.v1.EquipSlot slot = 1;
   ItemBonuses bonuses = 2;
   optional GearSpecialType special = 3;
   // Magnitude of the special, e.g. 0.15 for 15 percent lifesteal.
