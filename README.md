@@ -11,13 +11,26 @@ sibling checkout.
 
 ```
 kbve/type/v1/       identifiers and primitive wrappers   (imports: WKT only)
-kbve/common/v1/     math, results, key-values, locales   (imports: type)
-kbve/<domain>/v1/   domain schemas                       (imports: type, common)
+kbve/common/v1/     shared messages and enums            (imports: type)
+kbve/dialogue/v1/   shared domain                        (imports: type, common)
+kbve/<domain>/v1/   domain schemas          (imports: type, common, shared domains)
 ```
 
-Imports run in one direction only. A domain never imports another domain; if
-two domains need the same message, it belongs in `common` or in a domain of
-its own.
+Imports form a one-way graph with no cycles.
+
+`common` holds types with no behaviour of their own: identifiers, maths,
+enumerations several domains happen to share. A *shared domain* is different.
+It models a real subject that other domains build on, and it is too big and too
+opinionated to sit in `common` — but it imports only `type` and `common`, never
+another domain, so nothing can form a cycle.
+
+`dialogue` is the first of these. Quest steps, NPCs and map objects all present
+the player with conditional choices that write state back to the world; that is
+one subject, and before this it was implemented three times.
+
+A domain never imports a peer domain. When two peers need the same thing, it
+moves down: into `common` if it is a plain type, or into a shared domain if it
+carries real modelling.
 
 ## Conventions
 

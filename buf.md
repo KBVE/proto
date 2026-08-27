@@ -7,11 +7,14 @@ Canonical Protocol Buffer schemas for the KBVE ecosystem.
 | Package | Contents | May import |
 | --- | --- | --- |
 | `kbve.type.v1` | identifiers and primitive wrappers | well-known types only |
-| `kbve.common.v1` | math, results, key-values, locales, shared enums | `kbve.type.v1` |
-| `kbve.<domain>.v1` | domain schemas | `kbve.type.v1`, `kbve.common.v1` |
+| `kbve.common.v1` | shared messages and enums | `kbve.type.v1` |
+| `kbve.dialogue.v1` | shared domain: conversation graphs | `type`, `common` |
+| `kbve.<domain>.v1` | domain schemas | `type`, `common`, shared domains |
 
-Imports run one way. A domain never imports another domain: shared messages
-move down into `common`, or become a domain of their own.
+Imports form a one-way graph with no cycles. A domain never imports a peer
+domain. When two peers need the same thing it moves down: into `common` if it
+is a plain type, or into a shared domain if it carries real modelling of its
+own.
 
 ## Conventions
 

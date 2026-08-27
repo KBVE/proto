@@ -3,6 +3,7 @@ syntax = "proto3";
 package kbve.quest.v1;
 
 import "kbve/common/v1/registry.proto";
+import "kbve/dialogue/v1/dialogue.proto";
 import "kbve/type/v1/id.proto";
 
 // Narrative weight and reset behaviour of a quest.
@@ -31,38 +32,6 @@ enum ObjectiveType {
   OBJECTIVE_TYPE_EXPLORE = 8;
   // Game-specific logic, resolved through a trigger expression.
   OBJECTIVE_TYPE_CUSTOM = 9;
-}
-
-// Runtime tracking state. Not part of a quest definition; carried alongside it
-// per player.
-enum QuestStatus {
-  QUEST_STATUS_UNSPECIFIED = 0;
-  QUEST_STATUS_LOCKED = 1;
-  QUEST_STATUS_AVAILABLE = 2;
-  QUEST_STATUS_ACTIVE = 3;
-  // Objectives done, rewards not yet claimed.
-  QUEST_STATUS_COMPLETE = 4;
-  QUEST_STATUS_TURNED_IN = 5;
-  QUEST_STATUS_FAILED = 6;
-  QUEST_STATUS_ABANDONED = 7;
-}
-
-// What picking a dialogue choice does.
-enum ChoiceConsequenceType {
-  CHOICE_CONSEQUENCE_TYPE_UNSPECIFIED = 0;
-  CHOICE_CONSEQUENCE_TYPE_NONE = 1;
-  CHOICE_CONSEQUENCE_TYPE_ADVANCE_QUEST = 2;
-  CHOICE_CONSEQUENCE_TYPE_FAIL_QUEST = 3;
-  CHOICE_CONSEQUENCE_TYPE_BRANCH_QUEST = 4;
-  CHOICE_CONSEQUENCE_TYPE_GIVE_ITEM = 5;
-  CHOICE_CONSEQUENCE_TYPE_TAKE_ITEM = 6;
-  CHOICE_CONSEQUENCE_TYPE_REPUTATION = 7;
-  CHOICE_CONSEQUENCE_TYPE_SPAWN_ENEMY = 8;
-  CHOICE_CONSEQUENCE_TYPE_TELEPORT = 9;
-  CHOICE_CONSEQUENCE_TYPE_UNLOCK = 10;
-  CHOICE_CONSEQUENCE_TYPE_SET_FLAG = 11;
-  CHOICE_CONSEQUENCE_TYPE_CLEAR_FLAG = 12;
-  CHOICE_CONSEQUENCE_TYPE_NPC_DISPOSITION = 13;
 }
 
 // What happens when a quest or step fails.
@@ -147,25 +116,33 @@ message QuestRewards {
 }
 
 // One selectable option within a quest step.
+//
+// Gating and consequences are expressed with the dialogue domain's condition
+// and effect types rather than a quest-local copy. A choice in a quest step and
+// a choice in a conversation are the same thing, and modelling them twice is
+// how consequence_type ended up as an enum here and as free text on
+// npc.DialogueOption.
 message QuestChoice {
+  // Superseded by condition and effects below.
+  reserved 4, 5, 6, 8, 9, 11;
+  reserved "consequence", "consequence_ref", "consequence_value";
+  reserved "required_item_refs", "required_class", "set_flags";
+
   string id = 1;
   string label = 2;
   optional string description = 3;
-  ChoiceConsequenceType consequence = 4;
-
-  // Target of the consequence: a quest, item or zone depending on the type.
-  optional kbve.type.v1.Ulid consequence_ref = 5;
-  optional int32 consequence_value = 6;
 
   // Jump to a specific step instead of continuing sequentially.
   optional string next_step_id = 7;
 
-  repeated kbve.type.v1.Ulid required_item_refs = 8;
-  optional string required_class = 9;
   optional string outcome_id = 10;
-  repeated string set_flags = 11;
-  // Entry point into an NPC dialogue tree.
+  // Entry point into a dialogue graph.
   optional string dialogue_node_ref = 12;
+
+  // What must hold for this choice to be offered.
+  optional kbve.dialogue.v1.DialogueCondition condition = 13;
+  // Applied in order when the choice is taken.
+  repeated kbve.dialogue.v1.DialogueEffect effects = 14;
 }
 
 // A distinct ending, with its own rewards and continuation.
